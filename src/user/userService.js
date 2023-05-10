@@ -37,27 +37,31 @@ export const createUser = async (req, res) => {
 
   getConnection((conn) => {
     const query =
-      "INSERT INTO `users` (`userId`,`userPW`) VALUES ('" +
+      "INSERT IGNORE INTO `users` (`userId`,`userPW`) VALUES ('" +
       userId +
       "'," +
       userPW +
       ");";
-    conn.query(query, function (err, rows, fields) {
+      conn.query(query, function (err, rows, fields) {
       if (err) {
         console.log("error connecting: " + err);
         throw err;
       }
       const { insertId } = rows;
       resJson.userInfo = rows;
+      if(insertId==0){
+        res.json({'msg':"이미 존재하는 사용자입니다"})
+        return false;
+      }
       const query2 =
         "INSERT INTO `account` (`accountNum`,`accountPw`,`balance`,`userId`) VALUES ('" +
         accountNumber +
         "'," +
         userPW +
         "," +
-        0 +
+        5000000 +
         "," +
-        insertId +
+        userId +
         ")";
       conn.query(query2, function (err, rows, fields) {
         if (err) {
