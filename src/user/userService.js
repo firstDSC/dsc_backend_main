@@ -82,3 +82,71 @@ function generateAccountNumber() {
 
   return accountNumber;
 }
+
+export const deposit = async (req, res) => {
+  const { userId, value } = req.body;
+  let resJson = {};
+
+  getConnection((conn) => {
+    const query = "select * from account where userId=" + userId;
+    conn.query(query, function (err, rows, fields) {
+      if (err) {
+        console.log("error connecting: " + err);
+        throw err;
+      }
+      const { balance } = rows[0];
+
+      resJson.prevBalance = rows[0];
+      const query2 =
+        "update `account` set balance =" +
+        (balance + value) +
+        " where userId='" +
+        userId +
+        "'";
+      conn.query(query2, function (err, rows, fields) {
+        if (err) {
+          console.log("error connecting: " + err);
+          throw err;
+        }
+        resJson.afterBalance = balance + value;
+        res.json(resJson);
+      });
+    });
+    conn.release();
+  });
+};
+
+export const withdrawal = async (req, res) => {
+  const { userId, value } = req.body;
+  let resJson = {};
+
+  getConnection((conn) => {
+    const query = "select * from account where userId=" + userId;
+    conn.query(query, function (err, rows, fields) {
+      if (err) {
+        console.log("error connecting: " + err);
+        throw err;
+      }
+      const { balance } = rows[0];
+      if (balance < value) {
+        throw res.json({ msg: "insufficient balance error" });
+      }
+      resJson.prevBalance = rows[0];
+      const query2 =
+        "update `account` set balance =" +
+        (balance - value) +
+        " where userId=" +
+        userId +
+        "";
+      conn.query(query2, function (err, rows, fields) {
+        if (err) {
+          console.log("error connecting: " + err);
+          throw err;
+        }
+        resJson.afterBalance = balance + value;
+        res.json(resJson);
+      });
+    });
+    conn.release();
+  });
+};
