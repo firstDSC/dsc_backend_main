@@ -1,13 +1,15 @@
-import mysql from "mysql";
+import mysql from "mysql2";
 import conn from "./config/db-config.js";
 
 const pool = mysql.createPool(conn);
 
 export function getConnection(callback) {
   pool.getConnection(function (err, conn) {
-    if (!err) {
-      callback(conn);
+    if(err){
+      console.log(err);
+      throw err;
     }
+      callback(conn);
   });
 }
 

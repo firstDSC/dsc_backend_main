@@ -29,73 +29,30 @@ export const getStock = async (req, res) => {
     });
   };
 
-  //사용자 중복 체크
-  function checkDuplication(){
-    getConnection((conn) => {
-      const query = "select * from userStock where id=" + id;
-      conn.query(query, function (err, rows, fields) {
-
-        if (err) {
-          console.log("error connecting: " + err);
-          throw err;
-        }
-
-        //새로운 사용자
-        if(rows == undefined||null) return false;
-        //기존 사용자
-        else return true;
-
-      });
-      conn.release();
-    });
-    
-  }
-
   //매수
   export const buyStock = async (req, res) => {
-    const { userId, stockId, count, status, buysell, stockPrice } = req.body;
+    const {userId, stockId, count, price, status, buysell, stockPrice} = req.body;
+    let resJson = {};
 
-    const checkId = checkDuplication();
-
-    getConnection((conn) => {
-    
-      //함수반환 true(중복)면 update. 아니면 insert
-      if(checkId==true){
+    getConnection((conn) => { 
         const query =
-        `UPDATE userStock SET count = ?, status = ?, buysell = ?, stockPrice = ?
-        WHERE userId = ? AND stockId = ?`;
-        conn.query(query, [count, status, buysell, stockPrice, userId, stockId], function (err, rows, fields) {
-        if (err) {
-          console.log("error connecting: " + err);
-          throw err;
-        }
-      })
-    }
-
-      else{
-        const query =
-          "INSERT INTO 'userStock' ('userId', 'stockId', 'count', 'status', 'buysell', 'stockPrice') VALUES ('" + 
+          "INSERT INTO userStock (userId, stockId, count, price) VALUES (" +
           userId +
-          "'," +
+          "," +
           stockId +
-          "'," +
+         "," +
           count +
-          "'," +
-          status +
-          "'," +
-          buysell +
-          "'," +
-          stockPrice
-          ");";
-        conn.query(query, function (err, rows, fields) {
+          "," +
+          price +
+          ") ON DUPLICATE KEY UPDATE stockId = ?, count = ?, price = ? ;";
+        conn.query(query, [stockId, count, price],function (err, rows, fields) {
           if (err) {
             console.log("error connecting: " + err);
             throw err;
-          }
-        })  
-      }
-  
-        const totalPrice = count * stockPrice;
+          }  
+        resJson.userStockInfo=rows;
+    
+        let totalPrice = count * price;
         const query2 =
         `UPDATE account SET balance = balance - ? WHERE userId = ?`;
         conn.query(query2, [totalPrice, userId], function (err, rows, fields) {
@@ -103,80 +60,62 @@ export const getStock = async (req, res) => {
             console.log("error connecting: " + err);
             throw err;
           }
+          resJson.accountInfo=rows;
 
-          //userStock update
+          //history insert
           const query3 =
-          `UPDATE userStock SET count = count + ?, price = ?
-                        WHERE userId = ? AND stockId = ?`;
-          conn.query(query3, [count, price, userId, stockId], function (err, rows, fields) {
+            "INSERT INTO history (userId, stockId, count, status, buysell, stockPrice) VALUES (" +
+             userId +
+              "," +
+             stockId +
+              "," +
+              count +
+              ",'" +
+              status +
+              "','" +
+              buysell +
+              "'," +
+              stockPrice +
+              ");";
+          conn.query(query3, function (err, rows, fields) {
           if (err) {
             console.log("error connecting: " + err);
             throw err;
           }
-
-          //history update
-          const query4 =
-          `UPDATE history SET count = count + ?, status = ?, buysell = ?, stockPrice = ?
-                        WHERE userId = ? AND stockId = ?`;
-          conn.query(query4, [count, status, buysell, stockPrice, userId, stockId], function (err, rows, fields) {
-          if (err) {
-            console.log("error connecting: " + err);
-            throw err;
-          }
-
+          resJson.historyInfo=rows;
           res.json(resJson);
-          });
           });
         });
       });
-      conn.release();
+        conn.release();
+      });
   };
+
 
   //매도
   export const sellStock = async (req, res) => {
-    const { userId, stockId, count, status, buysell, stockPrice } = req.body;
+    const {userId, stockId, count, price, status, buysell, stockPrice} = req.body;
+    let resJson = {};
 
-    const checkId = checkDuplication();
-
-    getConnection((conn) => {
-    
-      //함수반환 true(중복)면 update. 아니면 insert
-      if(checkId==true){
+    getConnection((conn) => { 
         const query =
-        `UPDATE userStock SET count = ?, status = ?, buysell = ?, stockPrice = ?
-        WHERE userId = ? AND stockId = ?`;
-        conn.query(query, [count, status, buysell, stockPrice, userId, stockId], function (err, rows, fields) {
-        if (err) {
-          console.log("error connecting: " + err);
-          throw err;
-        }
-      })
-    }
-
-      else{
-        const query =
-          "INSERT INTO 'userStock' ('userId', 'stockId', 'count', 'status', 'buysell', 'stockPrice') VALUES ('" + 
+          "INSERT INTO userStock (userId, stockId, count, price) VALUES (" +
           userId +
-          "'," +
+          "," +
           stockId +
-          "'," +
+         "," +
           count +
-          "'," +
-          status +
-          "'," +
-          buysell +
-          "'," +
-          stockPrice
-          ");";
-        conn.query(query, function (err, rows, fields) {
+          "," +
+          price +
+          ") ON DUPLICATE KEY UPDATE stockId = ?, count = ?, price = ? ;";
+        conn.query(query, [stockId, count, price],function (err, rows, fields) {
           if (err) {
             console.log("error connecting: " + err);
             throw err;
-          }
-        })  
-      }
-  
-        const totalPrice = count * stockPrice;
+          }  
+        resJson.userStockInfo=rows;
+    
+        let totalPrice = count * price;
         const query2 =
         `UPDATE account SET balance = balance + ? WHERE userId = ?`;
         conn.query(query2, [totalPrice, userId], function (err, rows, fields) {
@@ -184,31 +123,33 @@ export const getStock = async (req, res) => {
             console.log("error connecting: " + err);
             throw err;
           }
+          resJson.accountInfo=rows;
 
-          //userStock update
+          //history insert
           const query3 =
-          `UPDATE userStock SET count = count - ?, price = ?
-                        WHERE userId = ? AND stockId = ?`;
-          conn.query(query3, [count, price, userId, stockId], function (err, rows, fields) {
+            "INSERT INTO history (userId, stockId, count, status, buysell, stockPrice) VALUES (" +
+             userId +
+              "," +
+             stockId +
+              "," +
+              count +
+              ",'" +
+              status +
+              "','" +
+              buysell +
+              "'," +
+              stockPrice +
+              ");";
+          conn.query(query3, function (err, rows, fields) {
           if (err) {
             console.log("error connecting: " + err);
             throw err;
           }
-
-          //history update
-          const query4 =
-          `UPDATE history SET count = count - ?, status = ?, buysell = ?, stockPrice = ?
-                        WHERE userId = ? AND stockId = ?`;
-          conn.query(query4, [count, status, buysell, stockPrice, userId, stockId], function (err, rows, fields) {
-          if (err) {
-            console.log("error connecting: " + err);
-            throw err;
-          }
-
+          resJson.historyInfo=rows;
           res.json(resJson);
-          });
           });
         });
       });
-      conn.release();
+        conn.release();
+      });
   };
