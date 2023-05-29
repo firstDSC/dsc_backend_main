@@ -5,7 +5,7 @@ export async function getStreamStock(stockCode) {
   const redisClient = Redis.createClient(6379, "localhost");
   await redisClient.connect();
   const data = await redisClient.hGetAll(stockCode);
-  if (data) return data.value;
+  if (data) return data;
   else return -1;
 }
 

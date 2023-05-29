@@ -27,9 +27,15 @@ io.on("connect", (socket) => {
     let stockInfo = [];
     for (let index in stockCodes) {
       const stockCode = stockCodes[index];
-      const stockPrice = await getStreamStock(stockCode);
-      stockInfo.push({ stockCode: stockCode, stockPrice: stockPrice });
+      const { value: stockPrice, priceChange: stockStatus } =
+        await getStreamStock(stockCode);
+      stockInfo.push({
+        stockCode: stockCode,
+        stockPrice,
+        stockStatus,
+      });
     }
+    console.log(stockInfo);
     socket.emit("stream", { stockInfo });
   });
 });
