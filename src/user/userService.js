@@ -29,6 +29,7 @@ export const getUserById = async (req, res) => {
   });
 };
 
+//회원가입
 export const createUser = async (req, res) => {
   const { userId, userPW } = req.body;
   let resJson = {};
@@ -42,15 +43,15 @@ export const createUser = async (req, res) => {
       "'," +
       userPW +
       ");";
-      conn.query(query, function (err, rows, fields) {
+    conn.query(query, function (err, rows, fields) {
       if (err) {
         console.log("error connecting: " + err);
         throw err;
       }
       const { insertId } = rows;
       resJson.userInfo = rows;
-      if(insertId==0){
-        res.json({'msg':"이미 존재하는 사용자입니다"})
+      if (insertId == 0) {
+        res.json({ 'msg': "이미 존재하는 사용자입니다" })
         return false;
       }
       const query2 =
@@ -87,6 +88,33 @@ function generateAccountNumber() {
   return accountNumber;
 }
 
+//로그인
+export const login = async (req, res) => {
+  const { userId, userPW } = req.body;
+
+  getConnection((conn) => {
+    const query = "select * from users where userId =" + userId + "and userPW = " + userPW;
+    conn.query(query, function (err, rows, fields) {
+      if (err) {
+        console.log("error connecting: " + err);
+        throw err;
+      }
+
+      if (rows.length === 0) {
+        res.json({ msg: "Invalid username or password" });
+      } else {
+        res.json({ msg: "Login successful" });
+      }
+
+    });
+    conn.release();
+  });
+};
+
+
+
+
+//입금
 export const deposit = async (req, res) => {
   const { userId, value } = req.body;
   let resJson = {};
@@ -120,6 +148,7 @@ export const deposit = async (req, res) => {
   });
 };
 
+//출금
 export const withdrawal = async (req, res) => {
   const { userId, value } = req.body;
   let resJson = {};
