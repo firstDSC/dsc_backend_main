@@ -23,10 +23,27 @@ export const getStock = async (req, res) => {
   });
 };
 
+//보유주식
 export const getStockById = async (req, res) => {
   const { id } = req.body;
   getConnection((conn) => {
     const query = "select * from userStock where id=" + id;
+    conn.query(query, function (err, rows, fields) {
+      if (err) {
+        console.log("error connecting: " + err);
+        throw err;
+      }
+      res.send(rows);
+    });
+    conn.release();
+  });
+};
+
+//거래내역
+export const getStockHistoryById = async (req, res) => {
+  const { id } = req.body;
+  getConnection((conn) => {
+    const query = "select * from history where id=" + id;
     conn.query(query, function (err, rows, fields) {
       if (err) {
         console.log("error connecting: " + err);

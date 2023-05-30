@@ -112,8 +112,6 @@ export const login = async (req, res) => {
 };
 
 
-
-
 //입금
 export const deposit = async (req, res) => {
   const { userId, value } = req.body;
