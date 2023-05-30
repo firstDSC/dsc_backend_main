@@ -10,6 +10,8 @@ export async function getStreamStock(stockCode) {
 }
 
 export const getStock = async (req, res) => {
+  console.log(req.method, req.path);
+
   getConnection((conn) => {
     const query = "select * from userStock";
     conn.query(query, function (err, rows, fields) {
@@ -25,6 +27,8 @@ export const getStock = async (req, res) => {
 
 //보유주식
 export const getStockById = async (req, res) => {
+  console.log(req.method, req.path);
+
   const { id } = req.body;
   getConnection((conn) => {
     const query = "select * from userStock where id=" + id;
@@ -41,6 +45,8 @@ export const getStockById = async (req, res) => {
 
 //거래내역
 export const getStockHistoryById = async (req, res) => {
+  console.log(req.method, req.path);
+
   const { id } = req.body;
   getConnection((conn) => {
     const query = "select * from history where id=" + id;
@@ -57,6 +63,7 @@ export const getStockHistoryById = async (req, res) => {
 
 //매수
 export const buyStock = async (req, res) => {
+  console.log(req.method, req.path);
   const { userId, stockId, count, price, status, buysell, stockPrice } =
     req.body;
   let resJson = {};
@@ -119,6 +126,8 @@ export const buyStock = async (req, res) => {
 
 //매도
 export const sellStock = async (req, res) => {
+  console.log(req.method, req.path);
+
   const { userId, stockId, count, price, status, buysell, stockPrice } =
     req.body;
   let resJson = {};

@@ -4,10 +4,13 @@ import stockController from "./src/stocks/stockController.js";
 import socketIo from "socket.io";
 import cors from "cors";
 import { getStreamStock } from "./src/stocks/stockService.js";
-const app = express();
 import swaggerUi from "swagger-ui-express";
 import swaggerFile from "./src/swagger/swagger-output.json" assert { type: "json" };
-app.use(cors());
+
+const app = express();
+
+app.use(cors({ credentials: true, origin: "http://localhost:3000" }));
+
 app.use(express.json());
 app.use("/user", userController);
 app.use("/stock", stockController);
@@ -41,7 +44,7 @@ io.on("connect", (socket) => {
         stockStatus,
       });
     }
-    console.log(stockInfo);
+    // console.log(stockInfo);
     socket.emit("stream", { stockInfo });
   });
 });
