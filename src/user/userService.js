@@ -1,4 +1,3 @@
-import { METHODS } from "http";
 import { getConnection } from "../db_conn.js";
 
 export const getUsers = async (req, res) => {
