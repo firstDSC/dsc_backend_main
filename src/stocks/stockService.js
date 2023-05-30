@@ -46,9 +46,9 @@ export const buyStock = async (req, res) => {
 
   getConnection((conn) => {
     const query =
-      "INSERT INTO userStock (userId, stockId, count, price) VALUES (" +
+      "INSERT INTO userStock (userId, stockId, count, price) VALUES ('" +
       userId +
-      "," +
+      "'," +
       stockId +
       "," +
       count +
@@ -73,9 +73,9 @@ export const buyStock = async (req, res) => {
 
         //history insert
         const query3 =
-          "INSERT INTO history (userId, stockId, count, status, buysell, stockPrice) VALUES (" +
+          "INSERT INTO history (userId, stockId, count, status, buysell, stockPrice) VALUES ('" +
           userId +
-          "," +
+          "'," +
           stockId +
           "," +
           count +
@@ -108,9 +108,9 @@ export const sellStock = async (req, res) => {
 
   getConnection((conn) => {
     const query =
-      "INSERT INTO userStock (userId, stockId, count, price) VALUES (" +
+      "INSERT INTO userStock (userId, stockId, count, price) VALUES ('" +
       userId +
-      "," +
+      "'," +
       stockId +
       "," +
       count +
@@ -135,9 +135,9 @@ export const sellStock = async (req, res) => {
 
         //history insert
         const query3 =
-          "INSERT INTO history (userId, stockId, count, status, buysell, stockPrice) VALUES (" +
+          "INSERT INTO history (userId, stockId, count, status, buysell, stockPrice) VALUES ('" +
           userId +
-          "," +
+          "'," +
           stockId +
           "," +
           count +
