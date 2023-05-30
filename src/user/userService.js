@@ -1,3 +1,4 @@
+import { METHODS } from "http";
 import { getConnection } from "../db_conn.js";
 
 export const getUsers = async (req, res) => {
@@ -15,9 +16,10 @@ export const getUsers = async (req, res) => {
 };
 
 export const getUserById = async (req, res) => {
-  const { id } = req.body;
+  console.log(req.method, req.path);
+  const { id } = req.query;
   getConnection((conn) => {
-    const query = "select * from users where id=" + id;
+    const query = "select * from users where userId='" + id + "'";
     conn.query(query, function (err, rows, fields) {
       if (err) {
         console.log("error connecting: " + err);
@@ -42,15 +44,15 @@ export const createUser = async (req, res) => {
       "'," +
       userPW +
       ");";
-      conn.query(query, function (err, rows, fields) {
+    conn.query(query, function (err, rows, fields) {
       if (err) {
         console.log("error connecting: " + err);
         throw err;
       }
       const { insertId } = rows;
       resJson.userInfo = rows;
-      if(insertId==0){
-        res.json({'msg':"이미 존재하는 사용자입니다"})
+      if (insertId == 0) {
+        res.json({ msg: "이미 존재하는 사용자입니다" });
         return false;
       }
       const query2 =
@@ -60,9 +62,9 @@ export const createUser = async (req, res) => {
         userPW +
         "," +
         5000000 +
-        "," +
+        ",'" +
         userId +
-        ")";
+        "')";
       conn.query(query2, function (err, rows, fields) {
         if (err) {
           console.log("error connecting: " + err);
@@ -92,7 +94,7 @@ export const deposit = async (req, res) => {
   let resJson = {};
 
   getConnection((conn) => {
-    const query = "select * from account where userId=" + userId;
+    const query = "select * from account where userId='" + userId + "'";
     conn.query(query, function (err, rows, fields) {
       if (err) {
         console.log("error connecting: " + err);
@@ -103,7 +105,7 @@ export const deposit = async (req, res) => {
       resJson.prevBalance = rows[0];
       const query2 =
         "update `account` set balance =" +
-        (balance + value) +
+        (Number(balance) + Number(value)) +
         " where userId='" +
         userId +
         "'";
@@ -125,7 +127,7 @@ export const withdrawal = async (req, res) => {
   let resJson = {};
 
   getConnection((conn) => {
-    const query = "select * from account where userId=" + userId;
+    const query = "select * from account where userId='" + userId + "'";
     conn.query(query, function (err, rows, fields) {
       if (err) {
         console.log("error connecting: " + err);
@@ -138,10 +140,10 @@ export const withdrawal = async (req, res) => {
       resJson.prevBalance = rows[0];
       const query2 =
         "update `account` set balance =" +
-        (balance - value) +
-        " where userId=" +
+        (Number(balance) - Number(value)) +
+        " where userId='" +
         userId +
-        "";
+        "'";
       conn.query(query2, function (err, rows, fields) {
         if (err) {
           console.log("error connecting: " + err);

@@ -5,11 +5,17 @@ import socketIo from "socket.io";
 import cors from "cors";
 import { getStreamStock } from "./src/stocks/stockService.js";
 const app = express();
-
+import swaggerUi from "swagger-ui-express";
+import swaggerFile from "./src/swagger/swagger-output.json" assert { type: "json" };
 app.use(cors());
 app.use(express.json());
 app.use("/user", userController);
 app.use("/stock", stockController);
+app.use(
+  "/docs",
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerFile, { explorer: true })
+);
 
 const server = app.listen(5000, () => {
   console.log("server running on port 5000");

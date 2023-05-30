@@ -20,6 +20,8 @@
     "redis": "^4.6.6",
     "socket.io": "^1.7.4",
     "socketio": "^1.0.0",
+    "swagger-autogen": "^2.23.1",
+    "swagger-ui-express": "^4.6.3",
     "v": "^0.3.0"
   },
   "type": "module",
