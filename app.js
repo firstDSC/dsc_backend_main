@@ -11,7 +11,7 @@ app.use(express.json());
 app.use("/user", userController);
 app.use("/stock", stockController);
 
-const server = app.listen(5000, () => {
+const server = app.listen(8080, () => {
   console.log("server running on port 5000");
 });
 

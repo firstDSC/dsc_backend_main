@@ -93,24 +93,45 @@ export const login = async (req, res) => {
   const { userId, userPW } = req.body;
 
   getConnection((conn) => {
-    const query = "select * from users where userId =" + userId + "and userPW = " + userPW;
-    conn.query(query, function (err, rows, fields) {
+    const query = "select * from users where userId = ? and userPW = ?";
+    conn.query(query, [userId, userPW], function (err, rows, fields) {
       if (err) {
         console.log("error connecting: " + err);
         throw err;
       }
 
-      if (rows.length === 0) {
-        res.json({ msg: "Invalid username or password" });
-      } else {
+      if (rows.length > 0) {
         res.json({ msg: "Login successful" });
+      } else {
+        res.json({ msg: "Id and PW do not match" });
+      }
+    });
+    conn.release();
+  });
+};
+
+
+//사용자 계좌잔액 조회
+export const getUserBalance = async (req, res) => {
+  const { userId, accountPw } = req.body;
+  getConnection((conn) => {
+    const query = "select balance from account where userId = ? and accountPw = ?";
+    conn.query(query, [userId, accountPw], function (err, rows, fields) {
+      if (err) {
+        console.log("error connecting: " + err);
+        throw err;
+      }
+
+      if (rows.length > 0) {
+        res.send(rows);
+      } else {
+        res.json({ msg: "userId and accountPw do not match" });
       }
 
     });
     conn.release();
   });
 };
-
 
 //입금
 export const deposit = async (req, res) => {
