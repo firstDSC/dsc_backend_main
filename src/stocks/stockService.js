@@ -1,9 +1,9 @@
 import { getConnection } from "../db_conn.js";
 import Redis from "redis";
+const redisClient = Redis.createClient(6379, "localhost");
+await redisClient.connect();
 
 export async function getStreamStock(stockCode) {
-  const redisClient = Redis.createClient(6379, "localhost");
-  await redisClient.connect();
   const data = await redisClient.hGetAll(stockCode);
   if (data) return data;
   else return -1;
