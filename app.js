@@ -4,8 +4,10 @@ import stockController from "./src/stocks/stockController.js";
 import socketIo from "socket.io";
 import cors from "cors";
 import { getStreamStock } from "./src/stocks/stockService.js";
-import swaggerUi from "swagger-ui-express";
-import swaggerFile from "./src/swagger/swagger-output.json" assert { type: "json" };
+//import swaggerUi from "swagger-ui-express";
+//import swaggerFile from "./src/swagger/swagger-output.json" assert { type: "json" };
+
+
 
 const app = express();
 
@@ -14,11 +16,13 @@ app.use(cors({ credentials: true, origin: "http://localhost:3000" }));
 app.use(express.json());
 app.use("/user", userController);
 app.use("/stock", stockController);
+/*
 app.use(
   "/docs",
   swaggerUi.serve,
   swaggerUi.setup(swaggerFile, { explorer: true })
 );
+*/
 
 const server = app.listen(5000, () => {
   console.log("server running on port 5000");

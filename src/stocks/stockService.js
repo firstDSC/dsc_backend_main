@@ -1,6 +1,6 @@
 import { getConnection } from "../db_conn.js";
 import Redis from "redis";
-const redisClient = Redis.createClient(6379, "localhost");
+const redisClient = Redis.createClient(6379, "redis-server");
 await redisClient.connect();
 
 export async function getStreamStock(stockCode) {
