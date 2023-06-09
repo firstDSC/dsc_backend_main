@@ -3,31 +3,17 @@
 
 version: "2"
 services:
-    server01:
+    server:
         build:
             context: .
         restart: always
         ports:
-            - 5000
+            - 5000:5000
+        networks:
+            - "localhost"
         depends_on:
-            - mysql
-    server02:
-        build:
-            context: .
-        restart: always
-        ports:
-            - 5001
-        depends_on:
-            - mysql
-    server03:
-        build:
-            context: .
-        restart: always
-        ports:
-            - 5002
-        depends_on:
-            - mysql
-    mysql:
+            - db
+    db:
         image: mysql:8.0.20
         command: mysqld --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
         restart: always
@@ -36,6 +22,8 @@ services:
             - ./db/data:/var/lib/mysql
         environment:
             MYSQL_ROOT_PASSWORD: root
+        networks:
+            - host
         ports:
             - 3306:3306
     redis-server:
