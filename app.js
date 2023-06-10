@@ -4,12 +4,16 @@ import stockController from "./src/stocks/stockController.js";
 import socketIo from "socket.io";
 import cors from "cors";
 import { getStreamStock } from "./src/stocks/stockService.js";
+import rabbitmqAPI from "./src/rabbitmq/rabbitmqAPI.js"
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 app.use("/user", userController);
 app.use("/stock", stockController);
+
+app.post("/send_msg", rabbitmqAPI.send_message);
+
 
 const server = app.listen(8080, () => {
   console.log("server running on port 5000");
@@ -33,3 +37,6 @@ io.on("connect", (socket) => {
     socket.emit("stream", { stockInfo });
   });
 });
+
+
+
