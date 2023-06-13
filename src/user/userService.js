@@ -1,6 +1,8 @@
 import { getConnection } from "../db_conn.js";
 
 export const getUsers = async (req, res) => {
+  console.log(req.method, req.path);
+
   getConnection((conn) => {
     const query = "select * from users";
     conn.query(query, function (err, rows, fields) {
@@ -32,6 +34,7 @@ export const getUserById = async (req, res) => {
 
 //회원가입
 export const createUser = async (req, res) => {
+  console.log(req.method, req.path);
   const { userId, userPW } = req.body;
   let resJson = {};
 
@@ -91,21 +94,46 @@ function generateAccountNumber() {
 
 //로그인
 export const login = async (req, res) => {
+  console.log(req.method, req.path);
+
   const { userId, userPW } = req.body;
 
   getConnection((conn) => {
-    const query =
-      "select * from users where userId =" + userId + "and userPW = " + userPW;
-    conn.query(query, function (err, rows, fields) {
+    const query = "select * from users where userId = ? and userPW = ?";
+    conn.query(query, [userId, userPW], function (err, rows, fields) {
       if (err) {
         console.log("error connecting: " + err);
         throw err;
       }
 
-      if (rows.length === 0) {
-        res.json({ msg: "Invalid username or password" });
-      } else {
+      if (rows.length > 0) {
         res.json({ msg: "Login successful" });
+      } else {
+        res.json({ msg: "Id and PW do not match" });
+      }
+    });
+    conn.release();
+  });
+};
+
+//사용자 계좌잔액 조회
+export const getUserBalance = async (req, res) => {
+  console.log(req.method, req.path);
+
+  const { userId, accountPw } = req.body;
+  getConnection((conn) => {
+    const query =
+      "select balance from account where userId = ? and accountPw = ?";
+    conn.query(query, [userId, accountPw], function (err, rows, fields) {
+      if (err) {
+        console.log("error connecting: " + err);
+        throw err;
+      }
+
+      if (rows.length > 0) {
+        res.send(rows);
+      } else {
+        res.json({ msg: "userId and accountPw do not match" });
       }
     });
     conn.release();
@@ -114,6 +142,8 @@ export const login = async (req, res) => {
 
 //입금
 export const deposit = async (req, res) => {
+  console.log(req.method, req.path);
+
   const { userId, value } = req.body;
   let resJson = {};
 
@@ -148,6 +178,8 @@ export const deposit = async (req, res) => {
 
 //출금
 export const withdrawal = async (req, res) => {
+  console.log(req.method, req.path);
+
   const { userId, value } = req.body;
   let resJson = {};
 
