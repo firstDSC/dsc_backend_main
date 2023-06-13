@@ -7,6 +7,7 @@ import { getStreamStock } from "./src/stocks/stockService.js";
 import swaggerUi from "swagger-ui-express";
 import swaggerFile from "./src/swagger/swagger-output.json" assert { type: "json" };
 
+import rabbitmqAPI from "./src/rabbitmq/rabbitmqAPI.js";
 const app = express();
 
 app.use(cors({ credentials: true, origin: "http://localhost:3000" }));
@@ -19,6 +20,8 @@ app.use(
   swaggerUi.serve,
   swaggerUi.setup(swaggerFile, { explorer: true })
 );
+
+app.post("/send_msg", rabbitmqAPI.send_message);
 
 const server = app.listen(5000, () => {
   console.log("server running on port 5000");

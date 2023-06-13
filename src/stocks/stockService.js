@@ -1,4 +1,6 @@
 import { getConnection } from "../db_conn.js";
+import Rabbitmq from "../rabbitmq/rabbitmqService.js"
+const url = "amqp://guest:guest@localhost:5672"; //rabbitmq url
 import Redis from "redis";
 const redisClient = Redis.createClient(6379, "localhost");
 await redisClient.connect();
@@ -129,6 +131,14 @@ export const buyStock = async (req, res) => {
             throw err;
           }
           resJson.historyInfo = rows;
+
+          // RabbitMQ 통신
+          const queue = "buyStockQueue";
+          const message = JSON.stringify({ userId, stockId, count, price });
+          const rabbitMqConn = new Rabbitmq(url, queue);
+          rabbitMqConn.send_message(message);
+
+
           res.json(resJson);
         });
       });
@@ -136,6 +146,7 @@ export const buyStock = async (req, res) => {
     conn.release();
   });
 };
+
 
 //매도
 export const sellStock = async (req, res) => {
@@ -193,7 +204,15 @@ export const sellStock = async (req, res) => {
             throw err;
           }
           resJson.historyInfo = rows;
+
+          // RabbitMQ 통신
+          const queue = "sellStockQueue";
+          const message = JSON.stringify({ userId, stockId, count, price });
+          const rabbitMqConn = new Rabbitmq(url, queue);
+          rabbitMqConn.send_message(message);
+
           res.json(resJson);
+
         });
       });
     });

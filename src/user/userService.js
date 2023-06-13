@@ -1,4 +1,5 @@
 import { getConnection } from "../db_conn.js";
+import rabbitmqConfig from "../config/rabbitmq.js"
 
 export const getUsers = async (req, res) => {
   console.log(req.method, req.path);
