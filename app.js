@@ -8,6 +8,7 @@ import swaggerUi from "swagger-ui-express";
 import swaggerFile from "./src/swagger/swagger-output.json" assert { type: "json" };
 
 import rabbitmqAPI from "./src/rabbitmq/rabbitmqAPI.js";
+import * as client from "./src/stocks/buysell/redis_model.js"
 const app = express();
 
 app.use(cors({ credentials: true, origin: "http://localhost:3000" }));
@@ -25,6 +26,7 @@ app.post("/send_msg", rabbitmqAPI.send_message);
 
 const server = app.listen(5000, () => {
   console.log("server running on port 5000");
+  client.rconnect();
 });
 
 const io = socketIo(server, {
