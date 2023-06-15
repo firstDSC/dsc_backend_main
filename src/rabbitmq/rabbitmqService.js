@@ -1,6 +1,6 @@
 import amqp from "amqplib"
 
-class RabbitmqWrapper {
+class Rabbitmq { //RabbitmqWrapper
     constructor(url, queueName, options) {
         // 객체 초기화
         this._url = url;
@@ -57,7 +57,7 @@ class RabbitmqWrapper {
         return Buffer.from(JSON.stringify(doc));
     }
 
-    // 메세지보내기
+    // buy메세지보내기
     async send_message(msg) {
         await this.setup(); //레빗엠큐 연결
         await this.assertQueue(); //큐생성
@@ -71,4 +71,4 @@ class RabbitmqWrapper {
     }
 }
 
-export default RabbitmqWrapper;
+export default Rabbitmq; //RabbitmqWrapper

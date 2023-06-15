@@ -129,7 +129,7 @@ export const buyStock = async (req, res) => {
 
           // RabbitMQ 통신
           const queue = "buyStockQueue";
-          const message = JSON.stringify({ userId, stockId, count, price });
+          const message = JSON.stringify({ userId: userId, stockId: stockId, count: count, price: price });
           const rabbitMqConn = new Rabbitmq(url, queue);
           rabbitMqConn.send_message(message);
 
@@ -200,7 +200,7 @@ export const sellStock = async (req, res) => {
 
           // RabbitMQ 통신
           const queue = "sellStockQueue";
-          const message = JSON.stringify({ userId, stockId, count, price });
+          const message = JSON.stringify({ userId: userId, stockId: stockId, count: count, price: price });
           const rabbitMqConn = new Rabbitmq(url, queue);
           rabbitMqConn.send_message(message);
 
