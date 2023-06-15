@@ -28,6 +28,7 @@ export const addSell = async (sell_info) => {
 
 // 체결 가능한 요청 mq로 전송 - 매수
 export const purchaseBuy = async (stockId) => { 
+    var flag = 0; 
     const stream_price = await redis.getStreamPrice(stockId);
     console.log("purchase buy ", stockId, " ", stream_price);
 
@@ -39,6 +40,7 @@ export const purchaseBuy = async (stockId) => {
         if(current_price == -1) break;
 
         if(!(current_price < stream_price)){ // 체결 가능 
+            flag = 1;
             var result = await redis.dequeue(stockId);
             console.log("msg : ", result);
             //rabbimq로 전송 
@@ -46,10 +48,16 @@ export const purchaseBuy = async (stockId) => {
         }
         else break;
     }
+
+    const updateConn = new Rabbitmq(url, "updateStockQueue");
+    if(flag==1){
+        updateConn.send_update(JSON.stringify({type : "buy", stockId : stockId}));
+    }
 }
 
 // 체결 가능한 요청 mq로 전송 - 매도 
 export const purchaseSell = async (stockId) => { // 실시간 시세
+    var flag = 0; 
     const stream_price = await redis.getStreamPrice(stockId);
     console.log("purchase sell ", stockId, " ", stream_price);
 
@@ -61,11 +69,16 @@ export const purchaseSell = async (stockId) => { // 실시간 시세
         if(current_price == -1) break;
 
         if(!(current_price > stream_price)){ // 체결 가능 
+            flag = 1
             var result = await redis.dequeue(stockId);
             console.log("msg : ", result);
             //rabbimq로 전송 
             rabbitMqConn.send_message(result);
         }
         else break;
+    }
+    const updateConn = new Rabbitmq(url, "updateStockQueue");
+    if(flag==1){
+        updateConn.send_update(JSON.stringify({type : "sell", stockId : stockId}));
     }
 }

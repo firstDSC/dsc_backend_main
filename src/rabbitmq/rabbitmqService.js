@@ -72,6 +72,12 @@ class RabbitmqWrapper {
         await this.sendToQueue(msg); //생성큐메세지전달
     }
 
+    async send_update(msg){
+        await this.setup(); //레빗엠큐 연결
+        await this.assertQueue(); //큐생성
+        await this.sendToQueue(msg); //생성큐메세지전달
+    }
+
     // 메세지 가져오기
     async recv_message() {
         await this.setup();
