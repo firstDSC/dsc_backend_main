@@ -5,26 +5,23 @@ import client from "../../config/redis-config.js";
 await client.connect();
 import * as bs_controller from "./buysell/buysell_controller.js"
 
-let data = 0;
+let data = new Array(15).fill(0); // data를 15개의 배열로 초기화
 
 export async function getStreamStock(stockCode) {
   const newdata = await client.hGetAll(stockCode, "price");
   if (newdata) {
+    const index = data.findIndex((item) => item.stockCode === stockCode);
 
-    if (data < newdata) {
-      console.log("시세 상승");
-    } else if (data > newdata) {
-      console.log("시세 하락");
-    } else {
-      console.log("시세 변동 없음");
-    }
+    if (index !== -1) {
+      if (data[index].price != newdata) {
+        data[index].price = newdata
+        bs_controller.purchaseBuy(stockCode);
+        bs_controller.purchaseSell(stockCode);
 
-    //변동 있으면 update 후 purchaseBuy, purchaseSell 호출
-    if (data != newdata) {
-      data = newdata;
-      await redisClient.hSet(stockCode, data);
-      bs_controller.purchaseBuy(stockCode);
-      bs_controller.purchaseSell(stockCode);
+        console.log("시세 변동");
+      } else {
+        console.log("시세 변동 없음");
+      }
     }
 
     return data;
@@ -32,6 +29,7 @@ export async function getStreamStock(stockCode) {
     return -1;
   }
 }
+
 
 export const getStock = async (req, res) => {
   console.log(req.method, req.path);
