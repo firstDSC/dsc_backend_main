@@ -25,6 +25,12 @@ export async function getStreamStock(stockCode) {
     data.price = currentPrice.toString();
     await redisClient.hmset(stockCode, data);
 
+    //변동 있으면 purchaseBuy, purchaseSell 호출
+    if (previousPrice != currentPrice) {
+      bs_controller.purchaseBuy(stockCode);
+      bs_controller.purchaseSell(stockCode);
+    }
+
     return data;
   } else {
     return -1;
