@@ -1,8 +1,8 @@
 import { getConnection } from "../db_conn.js";
 import Rabbitmq from "../rabbitmq/rabbitmqService.js"
 const url = "amqp://guest:guest@localhost:5672"; //rabbitmq url
-import client from "../../config/redis-config.js";
-await client.connect();
+import client from "../config/redis-config.js";
+//await client.connect();
 import * as bs_controller from "./buysell/buysell_controller.js"
 
 let data = new Array(15).fill(0); // data를 15개의 배열로 초기화
@@ -29,7 +29,6 @@ export async function getStreamStock(stockCode) {
     return -1;
   }
 }
-
 
 export const getStock = async (req, res) => {
   console.log(req.method, req.path);
