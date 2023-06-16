@@ -14,6 +14,11 @@ export const selectDB = async (num) => {
   });
 };
 
+export const count = async(db, stockId) => {
+  await selectDB(db);
+  return await client.zCard(stockId)
+} 
+
 //실시간 시세 
 export const getStreamPrice = async (stockId) => {
   await selectDB(0);
@@ -23,14 +28,17 @@ export const getStreamPrice = async (stockId) => {
 }
 
 //최상위 주문 price 확인
-export const getPrice = async (db, key) => {
+export const getPrice = async (db, value) => {
   await selectDB(db);
-  if(await client.zCard(key) == 0) return -1
   
-  var result = await client.zRange(key, 0, 0);
-  result = JSON.parse(result[0]);
-  return parseInt(result.price, 10);
+  value = JSON.parse(value);
+  return parseInt(value.price, 10);
 };
+
+export const getAll = async (db, key) => {
+  await selectDB(db);
+  return await client.zRange(key, 0, -1);
+}
 
 export const enqueue = async (key, score, value) => {
   console.log("hello enq");
