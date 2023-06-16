@@ -5,6 +5,7 @@ const url = "amqp://guest:guest@localhost:5672"; //rabbitmq url
 
 //redis에 매수 저장 
 export const addBuy = async (buy_info) => { 
+
     //buy_info 정보 : id 주문번호, userId 사용자 id, stockCode 주식 code, count 주식 매수 수량, price 주식 가격  
     await redis.selectDB(1);
 
@@ -12,6 +13,7 @@ export const addBuy = async (buy_info) => {
     const score = buy_info.price;
     const value = JSON.stringify(buy_info); 
     
+
     await redis.enqueue(key, -score, value);
 }
 
@@ -28,6 +30,7 @@ export const addSell = async (sell_info) => {
 }
 
 // 체결 가능한 요청 mq로 전송 - 매수
+
 export const purchaseBuy = async (stockId) => { 
     var flag = 0; 
     const stream_price = await redis.getStreamPrice(stockId);
@@ -47,6 +50,7 @@ export const purchaseBuy = async (stockId) => {
             console.log("buy msg : ", outstanding[i]);
             //rabbimq로 전송 
             await rabbitMqConn.send_message(outstanding[i]);
+
         }
         else break;
     }
@@ -86,5 +90,6 @@ export const purchaseSell = async (stockId) => { // 실시간 시세
     if(flag==1){
         const updateConn = new Rabbitmq(url, "updateStockQueue");
         updateConn.send_update(JSON.stringify({type : "sell", stockId : stockId}));
+
     }
 }

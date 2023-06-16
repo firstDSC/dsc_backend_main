@@ -27,16 +27,6 @@ class RabbitmqWrapper {
         this.queue = queue;
     }
 
-    //queue 삭제
-    async deleteQueue() {
-        await this.setup();
-        await this.assertQueue();
-        await this.channel.deleteQueue(this._queueName)
-        // if(await this.channel.checkQueue(this._queueName)){ // exist 
-        //     await this.channel.deleteQueue(this._queueName)
-        // }
-    }
-
     // queue에 데이터보내기
     async sendToQueue(msg) {
         const sending = await this.channel.sendToQueue(
@@ -70,6 +60,13 @@ class RabbitmqWrapper {
 
     // 메세지보내기
     async send_message(msg) {
+        await this.setup(); //레빗엠큐 연결
+        await this.deleteQueue(); // 큐삭제 
+        await this.assertQueue(); //큐생성
+        await this.sendToQueue(msg); //생성큐메세지전달
+    }
+
+    async send_update(msg) {
         await this.setup(); //레빗엠큐 연결
         await this.assertQueue(); //큐생성
         await this.sendToQueue(msg); //생성큐메세지전달
