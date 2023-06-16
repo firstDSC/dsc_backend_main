@@ -9,6 +9,7 @@ import swaggerFile from "./src/swagger/swagger-output.json" assert { type: "json
 
 import rabbitmqAPI from "./src/rabbitmq/rabbitmqAPI.js";
 import * as client from "./src/stocks/buysell/redis_model.js"
+import { getStockList } from "./src/stocks/stockService.js";
 const app = express();
 
 app.use(cors({ credentials: true, origin: "http://localhost:3000" }));
@@ -24,9 +25,20 @@ app.use(
 
 app.post("/send_msg", rabbitmqAPI.send_message);
 
-const server = app.listen(5000, () => {
+async function test(){
+  let stockCodes= ["005930", "373220", "000660", "207940", "051910"]
+
+  for (let index in stockCodes) {
+    const stockCode = stockCodes[index];
+    await getStreamStock(stockCode, index);
+  }
+
+}
+
+const server = app.listen(5000, async() => {
   console.log("server running on port 5000");
-  client.rconnect();
+  await client.rconnect();
+  test();
 });
 
 const io = socketIo(server, {
@@ -41,8 +53,8 @@ io.on("connect", (socket) => {
     let stockInfo = [];
     for (let index in stockCodes) {
       const stockCode = stockCodes[index];
-      const { value: stockPrice, priceChange: stockStatus } =
-        await getStreamStock(stockCode);
+      const { price: stockPrice, priceChange: stockStatus } =
+        await getStreamStock(stockCode, index);
       stockInfo.push({
         stockCode: stockCode,
         stockPrice,

@@ -1,14 +1,32 @@
 import { getConnection } from "../db_conn.js";
 import Rabbitmq from "../rabbitmq/rabbitmqService.js"
 const url = "amqp://guest:guest@localhost:5672"; //rabbitmq url
-import Redis from "redis";
+import * as redis from "./buysell/redis_model.js"
+import * as bs_controller from "./buysell/buysell_controller.js"
+let data = new Array(15).fill(0); // data를 15개의 배열로 초기화
 
-export async function getStreamStock(stockCode) {
-  const redisClient = Redis.createClient(6379, "localhost");
-  await redisClient.connect();
-  const data = await redisClient.hGetAll(stockCode);
-  if (data) return data.value;
-  else return -1;
+export async function getStreamStock(stockCode, index) {
+  const res_data = await redis.getStreamAll(stockCode);
+  const new_price = parseInt(res_data.price);
+  if (res_data) {
+    //const index = data.findIndex((item) => item.stockCode === stockCode);
+
+    //if (index !== -1) {
+      if (data[index] != new_price) {
+        data[index] = new_price;
+        await bs_controller.purchaseBuy(stockCode);
+        //bs_controller.purchaseSell(stockCode);
+
+        console.log(stockCode, "시세 변동");
+      } else {
+        console.log("시세 변동 없음");
+      }
+    //}
+
+    return res_data;
+  } else {
+    return -1;
+  }
 }
 
 export const getStock = async (req, res) => {
@@ -26,6 +44,20 @@ export const getStock = async (req, res) => {
     conn.release();
   });
 };
+
+export const getStockList = async (req, res) => {
+  getConnection((conn)=>{
+    const query = "select stockCode from stocks where id < 16"
+    conn.query(query, function (err, rows, fields){
+      if(err) {
+        console.log("error connecting: " + err);
+        throw err;
+      }
+      res.send(rows); 
+    })
+    conn.release();
+  })
+}
 
 export const getStockById = async (req, res) => {
   console.log(req.method, req.path);

@@ -5,6 +5,7 @@ const stockController = express.Router();
 
 stockController.get("/getStock", stockService.getStock);
 stockController.get("/getStockById", stockService.getStockById);
+stockController.get("/getStockList", stockService.getStockList);
 
 stockController.get("/getUserStock", stockService.getUserStock);
 stockController.get("/getUserStockHistory", stockService.getUserStockHistory);
