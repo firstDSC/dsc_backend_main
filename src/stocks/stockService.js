@@ -2,16 +2,50 @@ import { getConnection } from "../db_conn.js";
 import Rabbitmq from "../rabbitmq/rabbitmqService.js"
 const url = "amqp://guest:guest@localhost:5672"; //rabbitmq url
 import Redis from "redis";
+const redisClient = Redis.createClient(6379, "localhost");
+await redisClient.connect();
+import * as bs_controller from "./buysell/buysell_controller.js"
 
 export async function getStreamStock(stockCode) {
-  const redisClient = Redis.createClient(6379, "localhost");
-  await redisClient.connect();
   const data = await redisClient.hGetAll(stockCode);
-  if (data) return data.value;
-  else return -1;
+  if (data) {
+    // 이전 데이터와 현재 데이터를 비교하여 시세 변동 체크
+    const previousPrice = parseFloat(data.price); // 이전 가격
+    const currentPrice = await getCurrentPrice(stockCode); // Redis에서 현재 가격을 가져옴
+
+    if (previousPrice < currentPrice) {
+      console.log("시세 상승");
+    } else if (previousPrice > currentPrice) {
+      console.log("시세 하락");
+    } else {
+      console.log("시세 변동 없음");
+    }
+
+    // 데이터 업데이트
+    data.price = currentPrice.toString();
+    await redisClient.hmset(stockCode, data);
+
+    return data;
+  } else {
+    return -1;
+  }
+}
+
+async function getCurrentPrice(stockCode) {
+  return new Promise((resolve, reject) => {
+    redisClient.hget(stockCode, "price", (err, result) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(parseFloat(result));
+      }
+    });
+  });
 }
 
 export const getStock = async (req, res) => {
+  console.log(req.method, req.path);
+
   getConnection((conn) => {
     const query = "select * from userStock";
     conn.query(query, function (err, rows, fields) {
@@ -26,6 +60,8 @@ export const getStock = async (req, res) => {
 };
 
 export const getStockById = async (req, res) => {
+  console.log(req.method, req.path);
+
   const { id } = req.body;
   getConnection((conn) => {
     const query = "select * from userStock where id=" + id;
@@ -74,140 +110,116 @@ export const getUserStockHistory = async (req, res) => {
 
 //매수
 export const buyStock = async (req, res) => {
-  const { userId, stockId, count, price, status, buysell, stockPrice } =
+
+  const buysell = "buy";
+  console.log(req.method, req.path);
+  const { userId, stockId, count, status, stockPrice } =
     req.body;
   let resJson = {};
 
   getConnection((conn) => {
-    const query =
-      "INSERT INTO userStock (userId, stockId, count, price) VALUES (" +
-      userId +
-      "," +
-      stockId +
-      "," +
-      count +
-      "," +
-      price +
-      ") ON DUPLICATE KEY UPDATE stockId = ?, count = ?, price = ? ;";
-    conn.query(query, [stockId, count, price], function (err, rows, fields) {
+    // const query =
+    //   "INSERT INTO userStock (userId, stockId, count, price) VALUES ('" +
+    //   userId + "'," + stockId + "," + count + "," +  price +
+    //   ") ON DUPLICATE KEY UPDATE stockId = ?, count = ?, price = ? ;";
+    // conn.query(query, [stockId, count, price], function (err, rows, fields) {
+    //   if (err) {
+    //     console.log("error connecting: " + err);
+    //     throw err;
+    //   }
+    //   resJson.userStockInfo = rows;
+
+    // let totalPrice = count * price;
+    // const query2 = `UPDATE account SET balance = balance - ? WHERE userId = ?`;
+    // conn.query(query2, [totalPrice, userId], function (err, rows, fields) {
+    //   if (err) {
+    //     console.log("error connecting: " + err);
+    //     throw err;
+    //   }
+    //   resJson.accountInfo = rows;
+
+    //history insert
+    const query3 =
+      "INSERT INTO history (userId, stockId, count, status, buysell, stockPrice) VALUES ('" +
+      userId + "'," + stockId + "," + count + ",'" + status + "','" + buysell + "'," + stockPrice + ");";
+    conn.query(query3, async function (err, rows, fields) {
       if (err) {
         console.log("error connecting: " + err);
         throw err;
       }
-      resJson.userStockInfo = rows;
+      resJson.historyInfo = rows;
 
-      let totalPrice = count * price;
-      const query2 = `UPDATE account SET balance = balance - ? WHERE userId = ?`;
-      conn.query(query2, [totalPrice, userId], function (err, rows, fields) {
-        if (err) {
-          console.log("error connecting: " + err);
-          throw err;
-        }
-        resJson.accountInfo = rows;
+      const buy_info = { id: rows.insertId, userId: userId, stockId: stockId, count: count, price: stockPrice, type: buysell }
 
-        //history insert
-        const query3 =
-          "INSERT INTO history (userId, stockId, count, status, buysell, stockPrice) VALUES (" +
-          userId +
-          "," +
-          stockId +
-          "," +
-          count +
-          ",'" +
-          status +
-          "','" +
-          buysell +
-          "'," +
-          stockPrice +
-          ");";
-        conn.query(query3, function (err, rows, fields) {
-          if (err) {
-            console.log("error connecting: " + err);
-            throw err;
-          }
-          resJson.historyInfo = rows;
+      //redis 저장
+      await bs_controller.addBuy(buy_info);
 
-          // RabbitMQ 통신
-          const queue = "buyStockQueue";
-          const message = JSON.stringify({ userId: userId, stockId: stockId, count: count, price: price });
-          const rabbitMqConn = new Rabbitmq(url, queue);
-          rabbitMqConn.send_message(message);
+      // RabbitMQ 통신
+      await bs_controller.purchaseBuy(stockId);
 
-
-          res.json(resJson);
-        });
-      });
+      res.json(resJson);
     });
     conn.release();
   });
-};
+}
 
 
 //매도
 export const sellStock = async (req, res) => {
-  const { userId, stockId, count, price, status, buysell, stockPrice } =
+  console.log(req.method, req.path);
+
+  const buysell = "sell";
+  const { userId, stockId, count, status, stockPrice } =
     req.body;
   let resJson = {};
 
   getConnection((conn) => {
-    const query =
-      "INSERT INTO userStock (userId, stockId, count, price) VALUES (" +
-      userId +
-      "," +
-      stockId +
-      "," +
-      count +
-      "," +
-      price +
-      ") ON DUPLICATE KEY UPDATE stockId = ?, count = ?, price = ? ;";
-    conn.query(query, [stockId, count, price], function (err, rows, fields) {
+    // const query =
+    //   "INSERT INTO userStock (userId, stockId, count, price) VALUES ('" +
+    //   userId +
+    //   "'," +
+    //   stockId +
+    //   "," +
+    //   count +
+    //   "," +
+    //   price +
+    //   ") ON DUPLICATE KEY UPDATE stockId = ?, count = ?, price = ? ;";
+    // conn.query(query, [stockId, count, price], function (err, rows, fields) {
+    //   if (err) {
+    //     console.log("error connecting: " + err);
+    //     throw err;
+    //   }
+    //   resJson.userStockInfo = rows;
+
+    //   let totalPrice = count * price;
+    //   const query2 = `UPDATE account SET balance = balance + ? WHERE userId = ?`;
+    //   conn.query(query2, [totalPrice, userId], function (err, rows, fields) {
+    //     if (err) {
+    //       console.log("error connecting: " + err);
+    //       throw err;
+    //     }
+    //     resJson.accountInfo = rows;
+
+    //history insert
+    const query3 =
+      "INSERT INTO history (userId, stockId, count, status, buysell, stockPrice) VALUES ('" +
+      userId + "'," + stockId + "," + count + ",'" + status + "','" + buysell + "'," + stockPrice + ");";
+    conn.query(query3, async function (err, rows, fields) {
       if (err) {
         console.log("error connecting: " + err);
         throw err;
       }
-      resJson.userStockInfo = rows;
+      resJson.historyInfo = rows;
 
-      let totalPrice = count * price;
-      const query2 = `UPDATE account SET balance = balance + ? WHERE userId = ?`;
-      conn.query(query2, [totalPrice, userId], function (err, rows, fields) {
-        if (err) {
-          console.log("error connecting: " + err);
-          throw err;
-        }
-        resJson.accountInfo = rows;
+      const sell_info = { id: rows.insertId, userId: userId, stockId: stockId, count: count, price: stockPrice, type: buysell }
 
-        //history insert
-        const query3 =
-          "INSERT INTO history (userId, stockId, count, status, buysell, stockPrice) VALUES (" +
-          userId +
-          "," +
-          stockId +
-          "," +
-          count +
-          ",'" +
-          status +
-          "','" +
-          buysell +
-          "'," +
-          stockPrice +
-          ");";
-        conn.query(query3, function (err, rows, fields) {
-          if (err) {
-            console.log("error connecting: " + err);
-            throw err;
-          }
-          resJson.historyInfo = rows;
+      //redis 저장
+      await bs_controller.addSell(sell_info);
 
-          // RabbitMQ 통신
-          const queue = "sellStockQueue";
-          const message = JSON.stringify({ userId: userId, stockId: stockId, count: count, price: price });
-          const rabbitMqConn = new Rabbitmq(url, queue);
-          rabbitMqConn.send_message(message);
+      // RabbitMQ 통신
+      await bs_controller.purchaseSell(stockId)
+      res.json(resJson);
 
-          res.json(resJson);
-
-        });
-      });
     });
     conn.release();
   });

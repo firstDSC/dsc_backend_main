@@ -4,19 +4,29 @@ import stockController from "./src/stocks/stockController.js";
 import socketIo from "socket.io";
 import cors from "cors";
 import { getStreamStock } from "./src/stocks/stockService.js";
-import rabbitmqAPI from "./src/rabbitmq/rabbitmqAPI.js"
+import swaggerUi from "swagger-ui-express";
+import swaggerFile from "./src/swagger/swagger-output.json" assert { type: "json" };
+
+import rabbitmqAPI from "./src/rabbitmq/rabbitmqAPI.js";
+import * as client from "./src/stocks/buysell/redis_model.js"
 const app = express();
 
-app.use(cors());
+app.use(cors({ credentials: true, origin: "http://localhost:3000" }));
+
 app.use(express.json());
 app.use("/user", userController);
 app.use("/stock", stockController);
+app.use(
+  "/docs",
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerFile, { explorer: true })
+);
 
 app.post("/send_msg", rabbitmqAPI.send_message);
 
-
 const server = app.listen(8080, () => {
   console.log("server running on port 5000");
+  client.rconnect();
 });
 
 const io = socketIo(server, {
@@ -31,12 +41,15 @@ io.on("connect", (socket) => {
     let stockInfo = [];
     for (let index in stockCodes) {
       const stockCode = stockCodes[index];
-      const stockPrice = await getStreamStock(stockCode);
-      stockInfo.push({ stockCode: stockCode, stockPrice: stockPrice });
+      const { value: stockPrice, priceChange: stockStatus } =
+        await getStreamStock(stockCode);
+      stockInfo.push({
+        stockCode: stockCode,
+        stockPrice,
+        stockStatus,
+      });
     }
+    // console.log(stockInfo);
     socket.emit("stream", { stockInfo });
   });
 });
-
-
-

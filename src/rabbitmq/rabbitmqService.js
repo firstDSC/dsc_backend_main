@@ -1,6 +1,6 @@
 import amqp from "amqplib"
 
-class Rabbitmq { //RabbitmqWrapper
+class RabbitmqWrapper {
     constructor(url, queueName, options) {
         // 객체 초기화
         this._url = url;
@@ -25,6 +25,13 @@ class Rabbitmq { //RabbitmqWrapper
             durable: false, // false는 볼 때까지 보관, true는 일정시간이 지나면 사라짐
         });
         this.queue = queue;
+    }
+
+    //queue 삭제
+    async deleteQueue() {
+        if (!(this.queue == undefined)) { // exist 
+            await this.channel.deleteQueue(this._queueName)
+        }
     }
 
     // queue에 데이터보내기
@@ -57,8 +64,15 @@ class Rabbitmq { //RabbitmqWrapper
         return Buffer.from(JSON.stringify(doc));
     }
 
-    // buy메세지보내기
+    // 메세지보내기
     async send_message(msg) {
+        await this.setup(); //레빗엠큐 연결
+        await this.deleteQueue(); // 큐삭제 
+        await this.assertQueue(); //큐생성
+        await this.sendToQueue(msg); //생성큐메세지전달
+    }
+
+    async send_update(msg) {
         await this.setup(); //레빗엠큐 연결
         await this.assertQueue(); //큐생성
         await this.sendToQueue(msg); //생성큐메세지전달
@@ -71,4 +85,4 @@ class Rabbitmq { //RabbitmqWrapper
     }
 }
 
-export default Rabbitmq; //RabbitmqWrapper
+export default RabbitmqWrapper;
