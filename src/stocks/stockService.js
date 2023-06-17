@@ -168,16 +168,28 @@ export const buyStock = async (req, res) => {
   let resJson = {};
 
   getConnection((conn) => {
-    // const query =
-    //   "INSERT INTO userStock (userId, stockId, count, price) VALUES (" +
-    //   userId + "," +stockId +"," +count +"," +stockPrice +
-    //   ") ON DUPLICATE KEY UPDATE stockId = ?, count = ?, price = ? ;";
-    // conn.query(query, [stockId, count, stockPrice], function (err, rows, fields) {
-    //   if (err) {
-    //     console.log("error connecting: " + err);
-    //     throw err;
-    //   }
-    //   resJson.userStockInfo = rows;
+    //잔액 확인
+    const query1 =
+      "select balance from account where userId = ?";
+    conn.query(query1, [userId], function (err, rows, fields) {
+      if (err) {
+        console.log("error connecting: " + err);
+        throw err;
+      }
+
+      if(rows.length > 0){
+        const accountBalance = rows[0].balance;
+        const totalPrice = count * stockPrice;
+
+        if (totalPrice > accountBalance) {
+          resJson.error = "계좌 잔액 부족";
+          res.json(resJson);
+          return;
+      }}else {
+        resJson.error = "사용자 정보 없음";
+        res.json(resJson);
+        return;
+      }
 
       //history insert
       const query3 =
@@ -201,6 +213,7 @@ export const buyStock = async (req, res) => {
 
         res.json(resJson);
       });
+    });
       conn.release();
     });
   }
@@ -224,14 +237,21 @@ export const sellStock = async (req, res) => {
         console.log("error connecting: " + err);
         throw err;
       }
+      
+      if(rows.length > 0){
+        const availableStocks = rows[0].count;
 
-      const availableStocks = rows[0].count;
-
-      if (count > availableStocks) {
+        if (count > availableStocks) {
+          resJson.error = "매도 가능 주식 부족";
+          res.json(resJson);
+          return;
+        }
+      }else {
         resJson.error = "매도 가능 주식 부족";
         res.json(resJson);
         return;
       }
+      
 
       //history insert
       const query3 =
