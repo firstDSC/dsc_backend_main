@@ -278,3 +278,19 @@ export const sellStock = async (req, res) => {
   });
 
 };
+
+export const getStockInfo = async (req, res) => {
+  const {stockId} = req.body;
+
+  getConnection((conn)=>{
+    const query = "select * from stockinfo where stockCode="+stockId;
+    conn.query(query, function (err, rows, fields){
+      if(err) {
+        console.log("error connecting: " + err);
+        throw err;
+      }
+      res.send(rows); 
+    })
+    conn.release();
+  })
+}
