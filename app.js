@@ -38,7 +38,7 @@ async function test(){
 const server = app.listen(5000, async() => {
   console.log("server running on port 5000");
   await client.rconnect();
-  test();
+  //test();
 });
 
 const io = socketIo(server, {

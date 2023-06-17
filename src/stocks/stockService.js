@@ -3,6 +3,7 @@ import Rabbitmq from "../rabbitmq/rabbitmqService.js"
 const url = "amqp://guest:guest@localhost:5672"; //rabbitmq url
 import * as redis from "./buysell/redis_model.js"
 import * as bs_controller from "./buysell/buysell_controller.js"
+import { resolve } from "path";
 let data = new Array(15).fill(0); // data를 15개의 배열로 초기화
 
 export async function getStreamStock(stockCode, index) {
@@ -108,6 +109,55 @@ export const getUserStockHistory = async (req, res) => {
   });
 };
 
+async function getHistory(historyId)  {
+  getConnection(async (conn) => {
+    const query = "select * from history where id=" + historyId;
+    conn.query(query, function (err, rows, fields) {
+      if (err) {
+        console.log("error connecting: " + err);
+        throw err;
+      }
+      return rows;
+    });
+    conn.release();
+  });
+};
+
+export const getOustanding = async (req, res) => {
+  const { userId } = req.body;
+  const historyIdList = await redis.getOustanding(userId);
+
+  let historyIds = ""
+  for (let index in historyIdList) {
+    const historyId = historyIdList[index];
+    historyIds += "id="+historyId+" or "
+  }
+  historyIds += "id=0"
+
+  let historyInfo = [];
+  getConnection(async (conn) => {
+    const query = "select * from history where " + historyIds;
+        conn.query(query, function (err, rows, fields) {
+          if (err) {
+            console.log("error connecting: " + err);
+            throw err;
+          }
+
+          for(let index in rows){
+          const { id : id, userId: userId, stockId: stockId, count:count, stockPrice: stockPrice, buysell:type } = rows[index]
+          historyInfo.push({
+            id : id, userId: userId, stockId: stockId, count:count, stockPrice: stockPrice, type: type
+          });
+        }
+          console.log(historyInfo);
+          res.send(historyInfo)
+        });
+    conn.release();
+    });
+
+
+}
+
 //매수
 export const buyStock = async (req, res) => {
 
@@ -118,22 +168,16 @@ export const buyStock = async (req, res) => {
   let resJson = {};
 
   getConnection((conn) => {
-    const query =
-      "INSERT INTO userStock (userId, stockId, count, price) VALUES (" +
-      userId +
-      "," +
-      stockId +
-      "," +
-      count +
-      "," +
-      price +
-      ") ON DUPLICATE KEY UPDATE stockId = ?, count = ?, price = ? ;";
-    conn.query(query, [stockId, count, price], function (err, rows, fields) {
-      if (err) {
-        console.log("error connecting: " + err);
-        throw err;
-      }
-      resJson.userStockInfo = rows;
+    // const query =
+    //   "INSERT INTO userStock (userId, stockId, count, price) VALUES (" +
+    //   userId + "," +stockId +"," +count +"," +stockPrice +
+    //   ") ON DUPLICATE KEY UPDATE stockId = ?, count = ?, price = ? ;";
+    // conn.query(query, [stockId, count, stockPrice], function (err, rows, fields) {
+    //   if (err) {
+    //     console.log("error connecting: " + err);
+    //     throw err;
+    //   }
+    //   resJson.userStockInfo = rows;
 
       //history insert
       const query3 =
@@ -146,19 +190,20 @@ export const buyStock = async (req, res) => {
         }
         resJson.historyInfo = rows;
 
-          // RabbitMQ 통신
-          const queue = "buyStockQueue";
-          const message = JSON.stringify({ userId, stockId, count, price });
-          const rabbitMqConn = new Rabbitmq(url, queue);
-          rabbitMqConn.send_message(message);
+        const buy_info = {id : rows.insertId, userId: userId, stockId: stockId, count:count, price: stockPrice, type: buysell}
+
+        //redis 저장
+        await bs_controller.addBuy(buy_info);
+        await redis.addOutstanding(userId, rows.insertId);
+
+        // RabbitMQ 통신
+        await bs_controller.purchaseBuy(stockId);
 
         res.json(resJson);
       });
+      conn.release();
     });
-
-    conn.release();
-  });
-}
+  }
 
 
 //매도
@@ -199,14 +244,14 @@ export const sellStock = async (req, res) => {
         }
         resJson.historyInfo = rows;
 
+        const sell_info = {id : rows.insertId, userId: userId, stockId: stockId, count:count, price: stockPrice, type: buysell}
+
+          //redis 저장
+          await bs_controller.addSell(sell_info);
+          await redis.addOutstanding(userId, rows.insertId);
+
           // RabbitMQ 통신
-          const queue = "sellStockQueue";
-          const message = JSON.stringify({ userId, stockId, count, price });
-          const rabbitMqConn = new Rabbitmq(url, queue);
-          rabbitMqConn.send_message(message);
-
-          res.json(resJson);
-
+          await bs_controller.purchaseSell(stockId)
       });
     });
     conn.release();

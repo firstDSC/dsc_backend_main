@@ -50,13 +50,7 @@
                 "count": {
                   "example": "any"
                 },
-                "price": {
-                  "example": "any"
-                },
                 "status": {
-                  "example": "any"
-                },
-                "buysell": {
                   "example": "any"
                 },
                 "stockPrice": {
@@ -92,13 +86,7 @@
                 "count": {
                   "example": "any"
                 },
-                "price": {
-                  "example": "any"
-                },
                 "status": {
-                  "example": "any"
-                },
-                "buysell": {
                   "example": "any"
                 },
                 "stockPrice": {

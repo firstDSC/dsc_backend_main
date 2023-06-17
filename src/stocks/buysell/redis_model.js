@@ -1,6 +1,4 @@
-import {streamClient} from "../../config/redis-config.js";
-import {buyClient} from "../../config/redis-config.js"
-import {sellClient} from "../../config/redis-config.js"
+import {streamClient, buyClient, sellClient, userClient} from "../../config/redis-config.js";
 
 // export const selectDB = async (num) => {
 //   await client.select(num, (err) => {
@@ -18,9 +16,9 @@ export const rconnect = async () => {
   await buyClient.select(1);
   await sellClient.connect();
   await sellClient.select(2);
+  await userClient.connect();
+  await userClient.select(3);
 };
-
-
 
 export const buyCount = async(stockId) => {
   const result = await buyClient.zCard(stockId);
@@ -81,7 +79,15 @@ export const sellEnqueue = async (key, score, value) => {
 };
 
 export const dequeue = async (key) => {
-  const result = await client.zRange(key, 0, 0);
-  await client.zRem(key, result);
+  //const result = await client.zRange(key, 0, 0);
+  //await client.zRem(key, result);
   return result;
 };
+
+export const addOutstanding = async (userId, historyId) => {
+  await userClient.rPush(userId, historyId.toString()); 
+}
+
+export const getOustanding = async (userId) => {
+  return await userClient.lRange(userId,0,-1)
+}
