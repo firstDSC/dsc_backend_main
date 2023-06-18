@@ -124,7 +124,7 @@ async function getHistory(historyId)  {
 };
 
 export const getOustanding = async (req, res) => {
-  const { userId } = req.body;
+  const { userId } = req.query;
   const historyIdList = await redis.getOustanding(userId);
 
   let historyIds = ""
@@ -276,7 +276,6 @@ export const sellStock = async (req, res) => {
     });
     conn.release();
   });
-
 };
 
 export const getStockInfo = async (req, res) => {
