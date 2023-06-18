@@ -280,7 +280,7 @@ export const sellStock = async (req, res) => {
 };
 
 export const getStockInfo = async (req, res) => {
-  const {stockId} = req.body;
+  const {stockId} = req.query;
 
   getConnection((conn)=>{
     const query = "select * from stockinfo where stockCode="+stockId;
